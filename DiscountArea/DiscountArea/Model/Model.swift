@@ -52,6 +52,7 @@ struct Detail: Codable {
     let endTime: String?
     let subtitle: String?
     let startTime: String?
+    let products: [Product]?
     let merchantCoupons: [MerchantCoupon]?
 }
 
@@ -61,8 +62,8 @@ struct Tab: Codable {
 }
 
 struct Product: Codable {
-    let name: String
-    let label: String
+    let name: String?
+    let label: String?
     let productUrlId: String
 }
 
