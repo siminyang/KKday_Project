@@ -96,6 +96,7 @@ extension ViewController: UITableViewDataSource, UITableViewDelegate {
         } else if config.type == "PRODUCT" && config.detail.layout != nil{
             let cell = tableView.dequeueReusableCell(withIdentifier: "PromoContainerCell", for: indexPath) as! PromoContainerCell
             cell.configure(with: config.detail)
+            
             return cell
         }
         
