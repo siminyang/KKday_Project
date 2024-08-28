@@ -10,8 +10,6 @@ class ViewController: UIViewController {
     
     var configList: [Config] = []
     
-    //var merchantCouponisExpanded = false
-    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -22,12 +20,11 @@ class ViewController: UIViewController {
         setupTableView()
 
         httpRequestManager.fetchPageData()
-//        httpRequestManager.fetchProductData(productList: ["2247",
-//                                                          "38965",
-//                                                          "138901"])
+        
         tableView.register(MerchantCouponContainerCell.self, forCellReuseIdentifier: "MerchantCouponContainerCell")
         tableView.register(PromoContainerCell.self, forCellReuseIdentifier: "PromoContainerCell")
         tableView.register(GuideContainerCell.self, forCellReuseIdentifier: "GuideContainerCell")
+        tableView.register(HighlightContainerCell.self, forCellReuseIdentifier: "HighlightContainerCell")
     }
     
     func setupTableView() {
@@ -49,10 +46,9 @@ class ViewController: UIViewController {
 extension ViewController: HTTPRequestManagerDelegate {
     func manager(_ manager: HTTPRequestManager, didGet pageData: ResponsePageData) {
         
-        self.configList = pageData.data.data.categories[0].config
+        self.configList = pageData.data.data.categories[5].config
         print(configList)
         
-       
         tableView.reloadData()
     }
     
@@ -78,6 +74,7 @@ extension ViewController: UITableViewDataSource, UITableViewDelegate {
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        
         let config = configList[indexPath.row]
         
         if config.type == "MERCHANT_COUPON" {
@@ -86,18 +83,19 @@ extension ViewController: UITableViewDataSource, UITableViewDelegate {
 
             if let merchantCoupons = config.detail.merchantCoupons {
                 cell.configure(with: merchantCoupons)
-                //cell.configure(with: merchantCoupons, isExpanded: merchantCouponisExpanded)
-            } else {
-                print("沒有商家優惠券")
             }
-
+            
             cell.delegate = self
 
             return cell
             
-        } else if config.type == "PRODUCT" && config.detail.layout == "HIGHLIGHT"{
-            let cell = tableView.dequeueReusableCell(withIdentifier: "PromoContainerCell", for: indexPath) as! PromoContainerCell
+        } else if config.type == "PRODUCT" && config.detail.layout == "HIGHLIGHT" {
             
+            let cell = tableView.dequeueReusableCell(withIdentifier: "HighlightContainerCell", for: indexPath) as! HighlightContainerCell
+            
+            if let highlights = config.detail.products {
+                cell.configure(with: highlights)
+            }
             
             return cell
 

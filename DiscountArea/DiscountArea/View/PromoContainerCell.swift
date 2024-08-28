@@ -2,16 +2,6 @@
 
 import UIKit
 
-struct testProduct {
-    let imgUrl: String
-    let discount: Int
-    let name: String
-    let ratingStar: Double
-    let ratingCount: Int
-    let originalPrice: String
-    let price: String
-}
-
 class PromoContainerCell: UITableViewCell {
 
     var collectionView: UICollectionView!
@@ -100,15 +90,11 @@ class PromoContainerCell: UITableViewCell {
                 
                 httpRequestManager.fetchProductData(productList: tabProducts[selectedTabIndex].productIds)
                 
-                print("TabProducts>>>>>>>>>>>>>>>>>>\n", tabProducts)
-                
-                
             } else {
                 self.productsId = configDetail.products?.map{ $0.productUrlId } ?? []
                 
                 httpRequestManager.fetchProductData(productList: productsId)
                 
-                print("ProductsId>>>>>>>>>>>>>>>>>>\n", productsId)
             }
         }
         
@@ -125,7 +111,6 @@ extension PromoContainerCell: HTTPRequestManagerDelegate {
     func manager(_ manager: HTTPRequestManager, didGet productData: ResponseProductData) {
         self.products = []
         self.products = Array(productData.data.prefix(8))
-        print("Products>>>>>>>>>>>>>>>>>>\n", products)
         collectionView.reloadData()
         self.invalidateIntrinsicContentSize()
     }
@@ -211,7 +196,6 @@ extension PromoContainerCell: UICollectionViewDelegate {
         } else {
             // 跳出打開safari導到網頁
             let productId = products[indexPath.item].id
-            print(">>>> \(productId)")
             let openUrl = "https://www.kkday.com/zh-tw/product/\(productId)"
             open(urlString: openUrl)
         }
