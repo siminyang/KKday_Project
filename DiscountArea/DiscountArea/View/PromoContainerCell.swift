@@ -15,10 +15,17 @@ struct testProduct {
 class PromoContainerCell: UITableViewCell {
 
     var collectionView: UICollectionView!
+    
     var configDetail: Detail?
     
-    var tabs: [String] = []
-    var products: [testProduct] = []
+    var httpRequestManager = HTTPRequestManager()
+    
+    var tabProducts: [(tabName: String, productIds: [String])] = []
+    
+    var productsId: [String] = []
+    
+    var products: [ProductData] = []
+    
     var selectedTabIndex = 0
     
     private var layout: PromoLayoutType = .grid
@@ -26,22 +33,7 @@ class PromoContainerCell: UITableViewCell {
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         setupCollectionView()
-        setupTestProductsData()
-    }
-    
-    func setupTestProductsData() {
-        let product = testProduct(
-            imgUrl: "photo",
-            discount: 50,
-            name: "【花蓮豐濱景點】磯崎大石鼻山步道 整修重新開放！",
-            ratingStar: 4.6,
-            ratingCount: 20,
-            originalPrice: "1000",
-            price: "999"
-        )
-        
-        // Create 8 identical products
-        products = Array(repeating: product, count: 8)
+        httpRequestManager.delegate = self
     }
     
     required init?(coder: NSCoder) {
@@ -96,10 +88,50 @@ class PromoContainerCell: UITableViewCell {
         
         collectionView.collectionViewLayout = factory.createLayout(for: layout)
         
-//        self.tabs = configDetail?.tabs ?? []
-//        self.products = configDetail?.products ?? []
+        if let configDetail = configDetail {
+            if layout == .tabGrid || layout == .tabRow {
+                
+                tabProducts = []
+                
+                for tab in configDetail.tabs! {
+                    let productIds = tab.products.map { $0.productUrlId }
+                    tabProducts.append((tabName: tab.name, productIds: productIds))
+                }
+                
+                httpRequestManager.fetchProductData(productList: tabProducts[selectedTabIndex].productIds)
+                
+                print("TabProducts>>>>>>>>>>>>>>>>>>\n", tabProducts)
+                
+                
+            } else {
+                self.productsId = configDetail.products?.map{ $0.productUrlId } ?? []
+                
+                httpRequestManager.fetchProductData(productList: productsId)
+                
+                print("ProductsId>>>>>>>>>>>>>>>>>>\n", productsId)
+            }
+        }
         
         collectionView.reloadData()
+    }
+}
+
+// MARK: - HTTPRequestManagerDelegate
+extension PromoContainerCell: HTTPRequestManagerDelegate {
+    func manager(_ manager: HTTPRequestManager, didGet pageData: ResponsePageData) {
+        
+    }
+    
+    func manager(_ manager: HTTPRequestManager, didGet productData: ResponseProductData) {
+        self.products = []
+        self.products = Array(productData.data.prefix(8))
+        print("Products>>>>>>>>>>>>>>>>>>\n", products)
+        collectionView.reloadData()
+        self.invalidateIntrinsicContentSize()
+    }
+    
+    func manager(_ manager: HTTPRequestManager, didFailWith error: any Error) {
+        print(error)
     }
 }
 
@@ -117,13 +149,9 @@ extension PromoContainerCell: UICollectionViewDataSource {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         
         if layout == .tabGrid || layout == .tabRow {
-            if section == 0 {
-                return configDetail?.tabs?.count ?? 0
-            } else {
-                return configDetail?.tabs?[0].products.count ?? 0
-            }
+            return section == 0 ? tabProducts.count : min(products.count, 8)
         } else {
-            return min(configDetail?.products?.count ?? 0, 8)
+            return min(products.count, 8)
         }
     }
     
@@ -132,17 +160,21 @@ extension PromoContainerCell: UICollectionViewDataSource {
         if layout == .tabGrid || layout == .tabRow {
             if indexPath.section == 0 {
                 let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "TabCell", for: indexPath) as! PromoTabCell
-                cell.configure(with: tabs[indexPath.item], isSelected: indexPath.item == selectedTabIndex)
+                cell.configure(with: tabProducts[indexPath.item].tabName, isSelected: indexPath.item == selectedTabIndex)
                 return cell
                 
             } else {
                 let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "ProductCell", for: indexPath) as! PromoProductCell
-                cell.configure(with: products[indexPath.item])
+                if indexPath.item < products.count {
+                    cell.configure(with: products[indexPath.item])
+                }
                 return cell
             }
         } else {
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "ProductCell", for: indexPath) as! PromoProductCell
-            cell.configure(with: products[indexPath.item])
+            if indexPath.item < products.count {
+                cell.configure(with: products[indexPath.item])
+            }
             return cell
         }
     }
@@ -162,7 +194,26 @@ extension PromoContainerCell: UICollectionViewDelegate {
         }
     }
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        // TODO: Handle selection
+        if layout == .tabGrid || layout == .tabRow {
+            if indexPath.section == 0 {
+                selectedTabIndex = indexPath.item
+                
+                httpRequestManager.fetchProductData(productList: tabProducts[indexPath.item].productIds)
+                
+            } else {
+                // 跳出打開safari導到網頁
+                let productId = tabProducts[selectedTabIndex].productIds[indexPath.item]
+                print(">>>> \(productId)")
+                let openUrl = "https://www.kkday.com/zh-tw/product/\(productId)"
+                open(urlString: openUrl)
+            }
+            
+        } else {
+            // 跳出打開safari導到網頁
+            let productId = products[indexPath.item].id
+            print(">>>> \(productId)")
+            let openUrl = "https://www.kkday.com/zh-tw/product/\(productId)"
+            open(urlString: openUrl)
+        }
     }
 }
-

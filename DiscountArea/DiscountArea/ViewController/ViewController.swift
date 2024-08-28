@@ -10,7 +10,7 @@ class ViewController: UIViewController {
     
     var configList: [Config] = []
     
-    var merchantCouponisExpanded = false
+    //var merchantCouponisExpanded = false
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -20,13 +20,14 @@ class ViewController: UIViewController {
         httpRequestManager.delegate = self
         
         setupTableView()
-        
+
         httpRequestManager.fetchPageData()
 //        httpRequestManager.fetchProductData(productList: ["2247",
 //                                                          "38965",
 //                                                          "138901"])
         tableView.register(MerchantCouponContainerCell.self, forCellReuseIdentifier: "MerchantCouponContainerCell")
         tableView.register(PromoContainerCell.self, forCellReuseIdentifier: "PromoContainerCell")
+        tableView.register(GuideContainerCell.self, forCellReuseIdentifier: "GuideContainerCell")
     }
     
     func setupTableView() {
@@ -48,7 +49,7 @@ class ViewController: UIViewController {
 extension ViewController: HTTPRequestManagerDelegate {
     func manager(_ manager: HTTPRequestManager, didGet pageData: ResponsePageData) {
         
-        self.configList = pageData.data.data.categories[1].config
+        self.configList = pageData.data.data.categories[0].config
         print(configList)
         
        
@@ -67,9 +68,9 @@ extension ViewController: HTTPRequestManagerDelegate {
 
 extension ViewController: UITableViewDataSource, UITableViewDelegate {
     
-//    func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
-//        return 500
-//    }
+    func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
+        return 500
+    }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         
@@ -80,26 +81,45 @@ extension ViewController: UITableViewDataSource, UITableViewDelegate {
         let config = configList[indexPath.row]
         
         if config.type == "MERCHANT_COUPON" {
-            
+
             let cell = tableView.dequeueReusableCell(withIdentifier: "MerchantCouponContainerCell", for: indexPath) as! MerchantCouponContainerCell
-            
+
             if let merchantCoupons = config.detail.merchantCoupons {
-                cell.configure(with: merchantCoupons, isExpanded: merchantCouponisExpanded)
+                cell.configure(with: merchantCoupons)
+                //cell.configure(with: merchantCoupons, isExpanded: merchantCouponisExpanded)
             } else {
                 print("沒有商家優惠券")
             }
-            
+
             cell.delegate = self
+
+            return cell
+            
+        } else if config.type == "PRODUCT" && config.detail.layout == "HIGHLIGHT"{
+            let cell = tableView.dequeueReusableCell(withIdentifier: "PromoContainerCell", for: indexPath) as! PromoContainerCell
+            
             
             return cell
-        
-        } else if config.type == "PRODUCT" && config.detail.layout != nil{
+
+        } else if config.type == "PRODUCT" && config.detail.layout != nil {
+            
             let cell = tableView.dequeueReusableCell(withIdentifier: "PromoContainerCell", for: indexPath) as! PromoContainerCell
+            
             cell.configure(with: config.detail)
             
             return cell
+            
+        } else if config.type == "GUIDE" {
+            
+            let cell = tableView.dequeueReusableCell(withIdentifier: "GuideContainerCell", for: indexPath) as! GuideContainerCell
+            
+            if let guides = config.detail.guides {
+                cell.configure(with: guides)
+            }
+            
+            return cell
         }
-        
+
         return UITableViewCell()
     }
 }
