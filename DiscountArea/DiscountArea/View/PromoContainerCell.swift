@@ -2,9 +2,11 @@
 
 import UIKit
 
+
 protocol PromoContainerCellDelegate: AnyObject {
     func shouldDeleteTableViewCell(_ cell: PromoContainerCell)
 }
+
 
 class PromoContainerCell: UITableViewCell {
 
@@ -24,8 +26,10 @@ class PromoContainerCell: UITableViewCell {
     
     private var layout: PromoLayoutType = .grid
     
+
     weak var delegate: PromoContainerCellDelegate?
     
+
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         setupCollectionView()
@@ -96,26 +100,26 @@ class PromoContainerCell: UITableViewCell {
                 
                 httpRequestManager.fetchProductData(productList: tabProducts[selectedTabIndex].productIds)
                 
-                print("TabProducts>>>>>>>>>>>>>>>>>>\n", tabProducts)
-                
-                
+
             } else {
                 self.productsId = configDetail.products?.map{ $0.productUrlId } ?? []
                 
                 httpRequestManager.fetchProductData(productList: productsId)
                 
-                print("ProductsId>>>>>>>>>>>>>>>>>>\n", productsId)
+
             }
         }
         
         collectionView.reloadData()
     }
+
     
     func checkIfShouldDelete() {
         if products.isEmpty {
             delegate?.shouldDeleteTableViewCell(self)
         }
     }
+
 }
 
 // MARK: - HTTPRequestManagerDelegate
@@ -131,6 +135,7 @@ extension PromoContainerCell: HTTPRequestManagerDelegate {
         collectionView.reloadData()
         self.invalidateIntrinsicContentSize()
         checkIfShouldDelete()
+
     }
     
     func manager(_ manager: HTTPRequestManager, didFailWith error: any Error) {
@@ -214,7 +219,7 @@ extension PromoContainerCell: UICollectionViewDelegate {
         } else {
             // 跳出打開safari導到網頁
             let productId = products[indexPath.item].id
-            print(">>>> \(productId)")
+
             let openUrl = "https://www.kkday.com/zh-tw/product/\(productId)"
             open(urlString: openUrl)
         }
