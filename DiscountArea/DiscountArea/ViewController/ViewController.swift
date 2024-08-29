@@ -360,6 +360,7 @@ extension ViewController: UITableViewDataSource, UITableViewDelegate {
             let cell = tableView.dequeueReusableCell(withIdentifier: "MerchantCouponContainerCell", for: indexPath) as! MerchantCouponContainerCell
 
             if let merchantCoupons = config.detail.merchantCoupons {
+                cell.merchantCouponisExpanded = false
                 cell.configure(with: merchantCoupons)
             }
             
