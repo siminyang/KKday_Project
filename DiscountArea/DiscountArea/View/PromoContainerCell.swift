@@ -187,17 +187,18 @@ extension PromoContainerCell: UICollectionViewDataSource {
 
 // MARK: - UICollectionViewDelegate
 extension PromoContainerCell: UICollectionViewDelegate {
-    func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
-        if layout == .tabGrid || layout == .tabRow {
-            if indexPath.section == 0 {
-                cell.alpha = 0
-                
-                UIView.animate(withDuration: 0.5, delay: 0.05, options: .curveEaseInOut, animations: {
-                    cell.alpha = 1
-                })
-            }
-        }
-    }
+//    func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
+//        if layout == .tabGrid || layout == .tabRow {
+//            if indexPath.section == 0 {
+//                cell.alpha = 0
+//                
+//                UIView.animate(withDuration: 0.5, delay: 0.05, options: .curveEaseInOut, animations: {
+//                    cell.alpha = 1
+//                })
+//            }
+//        }
+//    }
+    
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         if layout == .tabGrid || layout == .tabRow {
             if indexPath.section == 0 {
@@ -224,7 +225,7 @@ extension PromoContainerCell: UICollectionViewDelegate {
 
 extension PromoContainerCell {
     func setupLeftGradientView() {
-        var view = UIView()
+        let view = UIView()
         let layer0 = CAGradientLayer()
         
         layer0.colors = [UIColor(red: 1, green: 1, blue: 1, alpha: 1).cgColor, UIColor(red: 1, green: 1, blue: 1, alpha: 0).cgColor]
@@ -241,7 +242,7 @@ extension PromoContainerCell {
         
         NSLayoutConstraint.activate([
             view.topAnchor.constraint(equalTo: contentView.topAnchor),
-            view.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 24),
+            view.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             view.widthAnchor.constraint(equalToConstant: 50),
             view.heightAnchor.constraint(equalToConstant: 32)
         ])
@@ -269,7 +270,7 @@ extension PromoContainerCell {
         
         NSLayoutConstraint.activate([
             view.topAnchor.constraint(equalTo: contentView.topAnchor),
-            view.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant:  -24),
+            view.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             view.widthAnchor.constraint(equalToConstant: 50),
             view.heightAnchor.constraint(equalToConstant: 32)
         ])
