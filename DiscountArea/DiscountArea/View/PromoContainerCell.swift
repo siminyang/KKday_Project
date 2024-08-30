@@ -7,7 +7,6 @@ protocol PromoContainerCellDelegate: AnyObject {
     func shouldDeleteTableViewCell(_ cell: PromoContainerCell)
 }
 
-
 class PromoContainerCell: UITableViewCell {
 
     var collectionView: UICollectionView!
@@ -26,10 +25,8 @@ class PromoContainerCell: UITableViewCell {
     
     private var layout: PromoLayoutType = .grid
     
-
     weak var delegate: PromoContainerCellDelegate?
     
-
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         setupCollectionView()
@@ -48,8 +45,8 @@ class PromoContainerCell: UITableViewCell {
         
         NSLayoutConstraint.activate([
             collectionView.topAnchor.constraint(equalTo: contentView.topAnchor),
-            collectionView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            collectionView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            collectionView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 24),
+            collectionView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -24),
             collectionView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
         ])
         
@@ -100,26 +97,26 @@ class PromoContainerCell: UITableViewCell {
                 
                 httpRequestManager.fetchProductData(productList: tabProducts[selectedTabIndex].productIds)
                 
-
+                setupLeftGradientView()
+                setupRightGradientView()
+                
             } else {
                 self.productsId = configDetail.products?.map{ $0.productUrlId } ?? []
                 
                 httpRequestManager.fetchProductData(productList: productsId)
-                
 
             }
         }
         
         collectionView.reloadData()
+        
     }
 
-    
     func checkIfShouldDelete() {
         if products.isEmpty {
             delegate?.shouldDeleteTableViewCell(self)
         }
     }
-
 }
 
 // MARK: - HTTPRequestManagerDelegate
@@ -219,9 +216,66 @@ extension PromoContainerCell: UICollectionViewDelegate {
         } else {
             // 跳出打開safari導到網頁
             let productId = products[indexPath.item].id
-
             let openUrl = "https://www.kkday.com/zh-tw/product/\(productId)"
             open(urlString: openUrl)
         }
+    }
+}
+
+extension PromoContainerCell {
+    func setupLeftGradientView() {
+        var view = UIView()
+        let layer0 = CAGradientLayer()
+        
+        layer0.colors = [UIColor(red: 1, green: 1, blue: 1, alpha: 1).cgColor, UIColor(red: 1, green: 1, blue: 1, alpha: 0).cgColor]
+        layer0.locations = [0.35, 1.0]
+        layer0.startPoint = CGPoint(x: 0, y: 0.5)
+        layer0.endPoint = CGPoint(x: 1, y: 0.5)
+        
+        layer0.frame = view.bounds
+        view.layer.insertSublayer(layer0, at: 0)
+        
+        contentView.addSubview(view)
+        
+        view.translatesAutoresizingMaskIntoConstraints = false
+        
+        NSLayoutConstraint.activate([
+            view.topAnchor.constraint(equalTo: contentView.topAnchor),
+            view.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 24),
+            view.widthAnchor.constraint(equalToConstant: 50),
+            view.heightAnchor.constraint(equalToConstant: 32)
+        ])
+        
+        contentView.bringSubviewToFront(view)
+        view.layoutIfNeeded()
+        layer0.frame = view.bounds
+    }
+    
+    func setupRightGradientView() {
+        let view = UIView()
+        let layer0 = CAGradientLayer()
+          
+        layer0.colors = [UIColor(red: 1, green: 1, blue: 1, alpha: 1).cgColor, UIColor(red: 1, green: 1, blue: 1, alpha: 0).cgColor]
+        layer0.locations = [0.35, 1.0]
+        layer0.startPoint = CGPoint(x: 1, y: 0.5)
+        layer0.endPoint = CGPoint(x: 0, y: 0.5)
+        
+        layer0.frame = view.bounds
+        view.layer.insertSublayer(layer0, at: 0)
+        
+        contentView.addSubview(view)
+        
+        view.translatesAutoresizingMaskIntoConstraints = false
+        
+        NSLayoutConstraint.activate([
+            view.topAnchor.constraint(equalTo: contentView.topAnchor),
+            view.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant:  -24),
+            view.widthAnchor.constraint(equalToConstant: 50),
+            view.heightAnchor.constraint(equalToConstant: 32)
+        ])
+        
+        contentView.bringSubviewToFront(view)
+        view.layoutIfNeeded()
+        layer0.frame = view.bounds
     }
 }

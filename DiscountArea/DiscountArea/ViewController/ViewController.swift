@@ -2,28 +2,23 @@
 
 import UIKit
 
-
-class ViewController: UIViewController,  CountrySelectorViewDelegate {
-
+class ViewController: UIViewController, CountrySelectorViewDelegate {
+    
     var httpRequestManager = HTTPRequestManager()
-    
     var tableView = UITableView()
-    
     let titleLabel = UILabel()
     
     var countrySelectorView: CountrySelectorView?
-    
     var dropdownButton: UIButton!
-    
     var sectionHeaderView: UIView!
-    
     var popupView: UIView?
     
     var countries: [Category] = []
-    
     var sectionTitles: [String] = []
-    
     var sectionLabels: [UILabel] = []
+    var underlineView: UIView?
+    var underlineLeadingConstraint: NSLayoutConstraint?
+    var underlineWidthConstraint: NSLayoutConstraint?
     
     var selectedCountry: Category? {
         didSet {
@@ -31,7 +26,12 @@ class ViewController: UIViewController,  CountrySelectorViewDelegate {
         }
     }
     
-    var configList: [Config] = []
+    var configList: [Config] = [] {
+        didSet {
+            print(">>>>>>>>>\n", configList)
+            tableView.reloadData()
+        }
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -42,7 +42,7 @@ class ViewController: UIViewController,  CountrySelectorViewDelegate {
         
         setupUI()
         setupTableView()
-
+        
         httpRequestManager.fetchPageData()
         
         tableView.register(TitleCell.self, forCellReuseIdentifier: "TitleCell")
@@ -51,6 +51,8 @@ class ViewController: UIViewController,  CountrySelectorViewDelegate {
         tableView.register(GuideContainerCell.self, forCellReuseIdentifier: "GuideContainerCell")
         tableView.register(HighlightContainerCell.self, forCellReuseIdentifier: "HighlightContainerCell")
         tableView.register(CouponContainerCell.self, forCellReuseIdentifier: "CouponContainerCell")
+        tableView.register(NoticeTableViewCell.self, forCellReuseIdentifier: "NoticeTableViewCell")
+        
     }
     
     func setupUI() {
@@ -71,7 +73,6 @@ class ViewController: UIViewController,  CountrySelectorViewDelegate {
         tableView.translatesAutoresizingMaskIntoConstraints = false
         
         NSLayoutConstraint.activate([
-
             tableView.topAnchor.constraint(equalTo: sectionHeaderView.bottomAnchor, constant: 16),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 12),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -12),
@@ -168,10 +169,14 @@ class ViewController: UIViewController,  CountrySelectorViewDelegate {
     }
     
     func setupSectionLabels() {
+
+        sectionLabels.forEach { $0.removeFromSuperview() }
+        sectionLabels.removeAll()
+        underlineView?.removeFromSuperview()
+        
         let scrollView = UIScrollView()
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.showsHorizontalScrollIndicator = false
-//        scrollView.backgroundColor = .red.withAlphaComponent(0.2) //Test
         scrollView.bounces = true
         sectionHeaderView.addSubview(scrollView)
         
@@ -183,16 +188,12 @@ class ViewController: UIViewController,  CountrySelectorViewDelegate {
         ])
         
         let underlineView = UIView()
-        underlineView.backgroundColor = .systemTeal
         underlineView.translatesAutoresizingMaskIntoConstraints = false
-        underlineView.backgroundColor = .systemTeal.withAlphaComponent(0.5) //Test
-//        underlineView.frame = CGRect(x: 16, y: 38, width: 100, height: 2) // 手动设置一个初始位置和大小
+        underlineView.backgroundColor = .systemTeal.withAlphaComponent(0.5)
         scrollView.addSubview(underlineView)
+        self.underlineView = underlineView
         
-        var underlineLeadingConstraint: NSLayoutConstraint?
-        var underlineWidthConstraint: NSLayoutConstraint?
         var previousLabel: UILabel?
-        sectionLabels.removeAll()
         
         for (index, title) in sectionTitles.enumerated() {
             let label = UILabel()
@@ -219,21 +220,85 @@ class ViewController: UIViewController,  CountrySelectorViewDelegate {
                     label.leadingAnchor.constraint(equalTo: previous.trailingAnchor, constant: 16)
                 ])
             } else {
-                label.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor, constant: 16).isActive = true
+                NSLayoutConstraint.activate([
+                    label.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor, constant: 16)
+                ])
+                
                 underlineLeadingConstraint = underlineView.leadingAnchor.constraint(equalTo: label.leadingAnchor)
                 underlineWidthConstraint = underlineView.widthAnchor.constraint(equalTo: label.widthAnchor)
+                underlineLeadingConstraint?.isActive = true
+                underlineWidthConstraint?.isActive = true
             }
             
             previousLabel = label
         }
         
-        underlineLeadingConstraint?.isActive = true
-        underlineWidthConstraint?.isActive = true
+        previousLabel?.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor, constant: -16).isActive = true
         underlineView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor).isActive = true
         underlineView.heightAnchor.constraint(equalToConstant: 2).isActive = true
-        previousLabel?.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor, constant: -16).isActive = true
+        
+        print("ScrollView Content Size: \(scrollView.contentSize)")
         print("Underline View Frame: \(underlineView.frame)")
     }
+    
+    @objc func sectionLabelTapped(_ sender: UITapGestureRecognizer) {
+        if let label = sender.view as? UILabel, let index = sectionLabels.firstIndex(of: label) {
+            guard index < tableView.numberOfSections else {
+                print("Attempted to scroll to an out-of-bounds section: \(index)")
+                return
+            }
+            
+            let rowCount = tableView.numberOfRows(inSection: index)
+            guard rowCount > 0 else {
+                print("No rows in section \(index). Cannot scroll.")
+                return
+            }
+            
+            for (i, lbl) in sectionLabels.enumerated() {
+                lbl.font = i == index ? UIFont.boldSystemFont(ofSize: 16) : UIFont.systemFont(ofSize: 16)
+                lbl.textColor = i == index ? .systemTeal : .black
+            }
+            
+            if let underlineView = underlineView {
+                UIView.animate(withDuration: 0.3) {
+                    underlineView.frame.origin.x = label.frame.origin.x
+                    underlineView.frame.size.width = label.intrinsicContentSize.width
+                }
+            } else {
+                print("underlineView is nil")
+            }
+            
+            let indexPath = IndexPath(row: 0, section: index)
+            tableView.scrollToRow(at: indexPath, at: .top, animated: true)
+        }
+    }
+
+    func populateSections(from configs: [Config]) {
+        // Directly assign the configs to configList
+        configList = configs.filter { config in
+            switch config.type {
+            case "MERCHANT_COUPON":
+                return config.detail.merchantCoupons != nil
+            case "PRODUCT":
+                return config.detail.layout != nil
+            case "GUIDE":
+                return config.detail.guides != nil
+            case "COUPON":
+                return config.detail.coupons != nil
+            case "DESCRIPTION":
+                return config.detail.title != nil
+            default:
+                return false
+            }
+        }
+
+        // Update sectionTitles based on the filtered configList
+        sectionTitles = configList.compactMap { $0.detail.title }
+        
+        updateSectionLabels()
+        tableView.reloadData()
+    }
+
     
     @objc func showCountrySelector() {
         if countrySelectorView == nil {
@@ -250,28 +315,15 @@ class ViewController: UIViewController,  CountrySelectorViewDelegate {
         }
     }
     
-    
     func didSelectCountry(_ country: Category?) {
         self.configList = []
-        
         selectedCountry = country
         hideCountrySelector()
-        
-        sectionTitles.removeAll()
-        
-        // DOING
-//        sectionHeaderView.removeFromSuperview()
-//        setupSectionHeaderView()
-        
         
         if let selectedCountry = country {
             self.configList = selectedCountry.config
             dropdownButton.setTitle(selectedCountry.name, for: .normal)
-            sectionTitles = selectedCountry.config.compactMap { $0.detail.title }
-            updateSectionLabels()
-            
-            tableView.reloadData()
-            
+            populateSections(from: selectedCountry.config)
         }
     }
     
@@ -287,9 +339,8 @@ class ViewController: UIViewController,  CountrySelectorViewDelegate {
     
     func fetchSectionData(for country: Category?) {
         guard let country = country else { return }
-        sectionTitles = country.config.compactMap { $0.detail.title }
-        tableView.reloadData()
-        updateSectionLabels()
+        populateSections(from: country.config)
+        
     }
     
     func updateSectionLabels() {
@@ -299,31 +350,8 @@ class ViewController: UIViewController,  CountrySelectorViewDelegate {
         sectionLabels.removeAll()
         setupSectionLabels()
     }
-    
-    @objc func sectionLabelTapped(_ sender: UITapGestureRecognizer) {
-        if let label = sender.view as? UILabel, let index = sectionLabels.firstIndex(of: label) {
-            guard index < tableView.numberOfSections else {
-                print("Attempted to scroll to an out-of-bounds section: \(index)")
-                return
-            }
-            
-            let rowCount = tableView.numberOfRows(inSection: index)
-                guard rowCount > 0 else {
-                    print("No rows in section \(index). Cannot scroll.")
-                    return
-                }
-            
-            for (i, lbl) in sectionLabels.enumerated() {
-                lbl.font = i == index ? UIFont.boldSystemFont(ofSize: 16) : UIFont.systemFont(ofSize: 16)
-                lbl.textColor = i == index ? .systemTeal : .black
-            }
-            
-            let indexPath = IndexPath(row: 0, section: index)
-            tableView.scrollToRow(at: indexPath, at: .top, animated: true)
-        }
-    }
 }
-
+    
 extension ViewController: HTTPRequestManagerDelegate {
     func manager(_ manager: HTTPRequestManager, didGet pageData: ResponsePageData) {
         
@@ -332,7 +360,8 @@ extension ViewController: HTTPRequestManagerDelegate {
         
         self.configList = pageData.data.data.categories[0].config
         
-        tableView.reloadData()
+        populateSections(from: pageData.data.data.categories[0].config)
+
     }
     
     func manager(_ manager: HTTPRequestManager, didGet productData: ResponseProductData) {
@@ -342,26 +371,30 @@ extension ViewController: HTTPRequestManagerDelegate {
     func manager(_ manager: HTTPRequestManager, didFailWith error: any Error) {
         print(error)
     }
-    
+
 }
 
 extension ViewController: UITableViewDataSource, UITableViewDelegate {
+    
+    func numberOfSections(in tableView: UITableView) -> Int {
+        return configList.count
+    }
     
     func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
         return 500
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        
-        return configList.count * 2
+        return 2
     }
+
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
-        let configIndex = indexPath.row / 2
+        let configIndex = indexPath.section
         let config = configList[configIndex]
         
-        if indexPath.row % 2 == 0 {
+        if indexPath.row == 0 {
             
             let cell = tableView.dequeueReusableCell(withIdentifier: "TitleCell", for: indexPath) as! TitleCell
             cell.configure(with: config.detail)
@@ -377,7 +410,6 @@ extension ViewController: UITableViewDataSource, UITableViewDelegate {
                 if let merchantCoupons = config.detail.merchantCoupons {
                     cell.configure(with: merchantCoupons)
                     cell.merchantCouponisExpanded = false
-                    //cell.configure(with: merchantCoupons, isExpanded: merchantCouponisExpanded)
                 } else {
                     print("沒有商家優惠券")
                 }
@@ -395,6 +427,8 @@ extension ViewController: UITableViewDataSource, UITableViewDelegate {
                 if let highlights = config.detail.products {
                     cell.configure(with: highlights)
                 }
+                
+                cell.selectionStyle = .none
                 
                 return cell
                 
@@ -417,10 +451,11 @@ extension ViewController: UITableViewDataSource, UITableViewDelegate {
                 if let guides = config.detail.guides {
                     cell.configure(with: guides)
                 }
-                
+
                 cell.selectionStyle = .none
                 
                 return cell
+                
             } else if config.type == "COUPON" {
                 
                 let cell = tableView.dequeueReusableCell(withIdentifier: "CouponContainerCell", for: indexPath) as! CouponContainerCell
@@ -429,12 +464,23 @@ extension ViewController: UITableViewDataSource, UITableViewDelegate {
                     cell.configure(with: coupons)
                 }
                 
+                cell.selectionStyle = .none
+                
+                return cell
+                
+            } else if config.type == "DESCRIPTION" {
+                let cell = tableView.dequeueReusableCell(withIdentifier: "NoticeTableViewCell", for: indexPath) as! NoticeTableViewCell
+                cell.configure(with: config.detail)
+                
+                cell.selectionStyle = .none
+                
                 return cell
             }
             
             return UITableViewCell()
         }
     }
+
 }
 
 //MARK: - Merchant Coupon Container Cell Delegate
@@ -450,12 +496,50 @@ extension ViewController: MerchantCouponContainerCellDelegate {
     }
 }
 
+// MARK: - ScrollViewDelegate
+extension ViewController: UIScrollViewDelegate {
+    
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        updateSectionLabelBasedOnScrollPosition()
+    }
+    
+    func updateSectionLabelBasedOnScrollPosition() {
+        guard let visibleIndexPaths = tableView.indexPathsForVisibleRows, !visibleIndexPaths.isEmpty else {
+            return
+        }
+
+        let firstVisibleSection = visibleIndexPaths[0].section
+        updateSectionLabelStyles(selectedIndex: firstVisibleSection)
+    }
+    
+    func updateSectionLabelStyles(selectedIndex: Int) {
+        for (index, label) in sectionLabels.enumerated() {
+            if index == selectedIndex {
+                label.font = UIFont.boldSystemFont(ofSize: 16)
+                label.textColor = .systemTeal
+            } else {
+                label.font = UIFont.systemFont(ofSize: 16)
+                label.textColor = .black
+            }
+        }
+        
+        if let underlineView = underlineView {
+            let selectedLabel = sectionLabels[selectedIndex]
+            UIView.animate(withDuration: 0.3) {
+                self.underlineView?.frame.origin.x = selectedLabel.frame.origin.x
+                self.underlineView?.frame.size.width = selectedLabel.intrinsicContentSize.width
+            }
+        }
+    }
+}
+
 extension ViewController: PromoContainerCellDelegate {
     func shouldDeleteTableViewCell(_ cell: PromoContainerCell) {
         if let indexPath = tableView.indexPath(for: cell) {
             let previousIndexPath = IndexPath(row: indexPath.row - 1, section: indexPath.section)
             configList.remove(at: indexPath.row / 2)
             tableView.deleteRows(at: [indexPath, previousIndexPath], with: .automatic)
+
         }
     }
 }
